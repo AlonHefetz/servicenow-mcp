@@ -37,3 +37,4 @@ build/
 # Test coverage
 coverage/
 .nyc_output/
+.claude-flow/

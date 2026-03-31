@@ -1,17 +1,17 @@
 {
   "$schema": "https://static.modelcontextprotocol.io/schemas/2025-10-17/server.schema.json",
-  "name": "io.github.nickzitzer/servicenow-nodejs",
-  "description": "Multi-instance ServiceNow MCP server with 40+ tools and intelligent schema discovery",
+  "name": "io.github.nickzitzer/happy-platform-mcp",
+  "description": "Happy MCP Server — Model Context Protocol server for the ServiceNow platform with 480+ auto-generated tools, multi-instance support, and natural language search",
   "repository": {
-    "url": "https://github.com/Happy-Technologies-LLC/mcp-servicenow-nodejs",
+    "url": "https://github.com/Happy-Technologies-LLC/happy-platform-mcp",
     "source": "github"
   },
-  "version": "2.1.1",
+  "version": "3.0.1",
   "packages": [
     {
       "registryType": "npm",
-      "identifier": "servicenow-mcp-server",
-      "version": "2.1.1",
+      "identifier": "happy-platform-mcp",
+      "version": "3.0.1",
       "transport": {
         "type": "stdio"
       },

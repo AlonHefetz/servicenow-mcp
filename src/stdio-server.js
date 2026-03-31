@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 /**
- * ServiceNow MCP Server - Stdio Transport
+ * Happy MCP Server - Stdio Transport
  *
  * Copyright (c) 2025 Happy Technologies LLC
  * Licensed under the MIT License - see LICENSE file for details
@@ -41,10 +41,10 @@ async function main() {
     // Connect server to transport
     await server.connect(transport);
 
-    console.error('ServiceNow MCP Server (stdio) started successfully');
+    console.error('Happy MCP Server (stdio) started successfully');
     console.error(`Instance: ${instance.name} - ${instance.url}`);
   } catch (error) {
-    console.error('Failed to start ServiceNow MCP Server:', error);
+    console.error('Failed to start Happy MCP Server:', error);
     process.exit(1);
   }
 }

@@ -1,5 +1,5 @@
 #!/bin/bash
-cd /Users/nczitzer/WebstormProjects/mcp-servicenow-nodejs
+cd /Users/nczitzer/WebstormProjects/happy-platform-mcp
 export SERVICENOW_INSTANCE_URL=https://dev276360.service-now.com
 export SERVICENOW_USERNAME=admin
 export SERVICENOW_PASSWORD='$h4fG+9nAGeU'

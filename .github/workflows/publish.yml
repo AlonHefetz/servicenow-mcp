@@ -81,6 +81,12 @@ jobs:
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
+      - name: Deprecate old package name
+        run: npm deprecate servicenow-mcp-server "This package has been renamed to happy-platform-mcp. Please run: npm install happy-platform-mcp"
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        continue-on-error: true
+
       - name: Create GitHub Release
         uses: actions/create-release@v1
         env:
@@ -109,18 +115,18 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: Extract metadata
+      - name: Extract metadata (new image)
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ${{ secrets.DOCKERHUB_USERNAME }}/mcp-servicenow-nodejs
+          images: ${{ secrets.DOCKERHUB_USERNAME }}/happy-platform-mcp
           tags: |
             type=semver,pattern={{version}},value=v${{ needs.check-version.outputs.version }}
             type=semver,pattern={{major}}.{{minor}},value=v${{ needs.check-version.outputs.version }}
             type=semver,pattern={{major}},value=v${{ needs.check-version.outputs.version }}
             type=raw,value=latest
 
-      - name: Build and push Docker image
+      - name: Build and push Docker image (new name)
         uses: docker/build-push-action@v5
         with:
           context: .
@@ -131,10 +137,21 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-      - name: Update Docker Hub description
+      - name: Push final migration tag to old image name
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: |
+            ${{ secrets.DOCKERHUB_USERNAME }}/mcp-servicenow-nodejs:${{ needs.check-version.outputs.version }}
+            ${{ secrets.DOCKERHUB_USERNAME }}/mcp-servicenow-nodejs:latest
+          cache-from: type=gha
+
+      - name: Update Docker Hub description (new image)
         uses: peter-evans/dockerhub-description@v4
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
-          repository: ${{ secrets.DOCKERHUB_USERNAME }}/mcp-servicenow-nodejs
+          repository: ${{ secrets.DOCKERHUB_USERNAME }}/happy-platform-mcp
           readme-filepath: ./README.md

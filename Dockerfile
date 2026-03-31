@@ -1,6 +1,7 @@
-# ServiceNow MCP Server - Docker Image
-# Author: nczitzer
-# Part of Happy Technologies composable service ecosystem
+# Happy MCP Server - Docker Image
+# Model Context Protocol Server for the ServiceNow Platform
+# Copyright 2025 Happy Technologies LLC
+# Licensed under Apache License 2.0
 
 # Stage 1: Dependencies
 FROM node:24-alpine AS dependencies
@@ -42,6 +43,7 @@ COPY src/ ./src/
 COPY config/ ./config/
 COPY docs/ ./docs/
 COPY LICENSE ./
+COPY NOTICE ./
 COPY README.md ./
 
 # Create directory for config

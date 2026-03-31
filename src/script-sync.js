@@ -1,5 +1,5 @@
 /**
- * ServiceNow MCP Server - Script Synchronization
+ * Happy MCP Server - Script Synchronization
  *
  * Copyright (c) 2025 Happy Technologies LLC
  * Licensed under the MIT License - see LICENSE file for details

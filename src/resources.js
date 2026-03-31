@@ -1,5 +1,5 @@
 /**
- * ServiceNow MCP Server - MCP Resources Implementation
+ * Happy MCP Server - MCP Resources Implementation
  *
  * Copyright (c) 2025 Happy Technologies LLC
  * Licensed under the MIT License - see LICENSE file for details
@@ -184,7 +184,7 @@ export function createResourceHandlers(serviceNowClient, configManager, tableMet
             default: instanceConfig.default || false
           },
           server_info: {
-            name: 'ServiceNow MCP Server',
+            name: 'Happy MCP Server',
             version: '2.0.0',
             description: 'Multi-instance ServiceNow MCP server with resources'
           },

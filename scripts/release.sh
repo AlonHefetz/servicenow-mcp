@@ -1,15 +1,18 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Release script for servicenow-mcp-server
-# Publishes to: GitHub (tag + release), npm, Docker Hub
+# Release script for happy-platform-mcp
+# Publishes to: GitHub (tag + release), npm (new + deprecation notice on old), Docker Hub
 # Usage:
 #   ./scripts/release.sh          # publish current version from package.json
-#   ./scripts/release.sh 2.2.0    # bump to 2.2.0, commit, then publish
+#   ./scripts/release.sh 3.1.0    # bump to 3.1.0, commit, then publish
 
+NPM_PACKAGE="happy-platform-mcp"
+NPM_OLD_PACKAGE="servicenow-mcp-server"
 DOCKER_USER="nczitzer"
-DOCKER_IMAGE="mcp-servicenow-nodejs"
-REPO="Happy-Technologies-LLC/mcp-servicenow-nodejs"
+DOCKER_IMAGE="happy-platform-mcp"
+DOCKER_OLD_IMAGE="mcp-servicenow-nodejs"
+REPO="Happy-Technologies-LLC/happy-platform-mcp"
 
 cd "$(git rev-parse --show-toplevel)"
 
@@ -27,7 +30,7 @@ TAG="v${VERSION}"
 
 echo ""
 echo "=========================================="
-echo "  Releasing servicenow-mcp-server ${TAG}"
+echo "  Releasing ${NPM_PACKAGE} ${TAG}"
 echo "=========================================="
 echo ""
 
@@ -60,7 +63,7 @@ fi
 
 # --- 1. GitHub: Tag + Release ---
 echo ""
-echo "==> [1/4] GitHub tag & release"
+echo "==> [1/5] GitHub tag & release"
 if git rev-parse "$TAG" &>/dev/null; then
   echo "  Tag $TAG already exists, skipping tag creation"
 else
@@ -79,47 +82,62 @@ else
   echo "  Created GitHub release $TAG"
 fi
 
-# --- 2. npm publish ---
+# --- 2. npm publish (new package) ---
 echo ""
-echo "==> [2/4] npm publish"
-PUBLISHED=$(npm view servicenow-mcp-server version 2>/dev/null || echo "none")
+echo "==> [2/5] npm publish (${NPM_PACKAGE})"
+PUBLISHED=$(npm view "${NPM_PACKAGE}" version 2>/dev/null || echo "none")
 if [ "$PUBLISHED" = "$VERSION" ]; then
   echo "  v${VERSION} already on npm, skipping"
 else
   npm publish --access public
-  echo "  Published servicenow-mcp-server@${VERSION} to npm"
+  echo "  Published ${NPM_PACKAGE}@${VERSION} to npm"
 fi
 
-# --- 3. Docker Hub: login check ---
+# --- 3. Deprecate old npm package ---
 echo ""
-echo "==> [3/4] Docker Hub login"
+echo "==> [3/5] Deprecate old npm package (${NPM_OLD_PACKAGE})"
+npm deprecate "${NPM_OLD_PACKAGE}" "This package has been renamed to ${NPM_PACKAGE}. Please run: npm install ${NPM_PACKAGE}" 2>/dev/null || echo "  (already deprecated or not owned)"
+
+# --- 4. Docker Hub: login check ---
+echo ""
+echo "==> [4/5] Docker Hub login"
 if ! docker login --username "$DOCKER_USER" 2>/dev/null; then
   echo "  Need Docker Hub credentials."
   docker login --username "$DOCKER_USER"
 fi
 
-# --- 4. Docker build + push ---
+# --- 5. Docker build + push (new image name) ---
 echo ""
-echo "==> [4/4] Docker build & push"
+echo "==> [5/5] Docker build & push"
 FULL_IMAGE="${DOCKER_USER}/${DOCKER_IMAGE}"
+FULL_OLD_IMAGE="${DOCKER_USER}/${DOCKER_OLD_IMAGE}"
 
 # Extract major.minor for semver tags
 MAJOR=$(echo "$VERSION" | cut -d. -f1)
 MINOR=$(echo "$VERSION" | cut -d. -f1-2)
 
-echo "  Building for linux/amd64,linux/arm64..."
-docker buildx create --name release-builder --use 2>/dev/null || docker buildx use release-builder 2>/dev/null || true
-
-docker buildx build \
-  --platform linux/amd64,linux/arm64 \
-  --push \
+echo "  Building image..."
+docker build \
   -t "${FULL_IMAGE}:${VERSION}" \
   -t "${FULL_IMAGE}:${MINOR}" \
   -t "${FULL_IMAGE}:${MAJOR}" \
   -t "${FULL_IMAGE}:latest" \
+  -t "${FULL_OLD_IMAGE}:${VERSION}" \
+  -t "${FULL_OLD_IMAGE}:latest" \
   .
 
+echo "  Pushing new image tags..."
+docker push "${FULL_IMAGE}:${VERSION}"
+docker push "${FULL_IMAGE}:${MINOR}"
+docker push "${FULL_IMAGE}:${MAJOR}"
+docker push "${FULL_IMAGE}:latest"
+
+echo "  Pushing final tags to old image (for migration)..."
+docker push "${FULL_OLD_IMAGE}:${VERSION}"
+docker push "${FULL_OLD_IMAGE}:latest"
+
 echo "  Pushed ${FULL_IMAGE}:{${VERSION},${MINOR},${MAJOR},latest}"
+echo "  Pushed ${FULL_OLD_IMAGE}:{${VERSION},latest} (migration)"
 
 # --- Done ---
 echo ""
@@ -128,6 +146,10 @@ echo "  Release ${TAG} complete!"
 echo "=========================================="
 echo ""
 echo "  GitHub:  https://github.com/${REPO}/releases/tag/${TAG}"
-echo "  npm:     https://www.npmjs.com/package/servicenow-mcp-server/v/${VERSION}"
+echo "  npm:     https://www.npmjs.com/package/${NPM_PACKAGE}/v/${VERSION}"
 echo "  Docker:  https://hub.docker.com/r/${DOCKER_USER}/${DOCKER_IMAGE}/tags"
+echo ""
+echo "  Migration notes:"
+echo "    npm:    Users should run 'npm install ${NPM_PACKAGE}' (old package deprecated)"
+echo "    Docker: Users should pull '${FULL_IMAGE}' (old image gets final tag only)"
 echo ""

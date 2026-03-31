@@ -1,5 +1,5 @@
 /**
- * ServiceNow MCP Server - REST API Client
+ * Happy MCP Server - REST API Client
  *
  * Copyright (c) 2025 Happy Technologies LLC
  * Licensed under the MIT License - see LICENSE file for details

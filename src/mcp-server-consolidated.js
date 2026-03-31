@@ -1,5 +1,5 @@
 /**
- * ServiceNow MCP Server - MCP Tool Registration
+ * Happy MCP Server - MCP Tool Registration
  *
  * Copyright (c) 2025 Happy Technologies LLC
  * Licensed under the MIT License - see LICENSE file for details
@@ -2853,7 +2853,7 @@ The problem has been closed successfully.`
     if (uri === 'servicenow://instance') {
       const config = {
         server_info: {
-          name: 'ServiceNow MCP Server (Consolidated)',
+          name: 'Happy MCP Server (Consolidated)',
           version: '2.0.0',
           description: 'Consolidated ServiceNow integration with metadata-driven schema lookups'
         },

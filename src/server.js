@@ -9,6 +9,7 @@ import express from 'express';
 import dotenv from 'dotenv';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
+import crypto from 'crypto';
 import { SSEServerTransport } from '@modelcontextprotocol/sdk/server/sse.js';
 import { ServiceNowClient } from './servicenow-client.js';
 import { createMcpServer } from './mcp-server-consolidated.js';
@@ -69,7 +70,8 @@ const authenticateRequest = (req, res, next) => {
     return res.status(401).json({ error: 'Missing API key. Provide X-API-Key header.' });
   }
 
-  if (providedKey !== API_KEY) {
+  // SECURITY: Use timing-safe comparison to prevent timing attacks
+  if (!crypto.timingSafeEqual(Buffer.from(providedKey), Buffer.from(API_KEY))) {
     console.warn(`🚫 Unauthorized request to ${req.path} - invalid API key`);
     return res.status(403).json({ error: 'Invalid API key' });
   }
@@ -189,13 +191,13 @@ app.post('/mcp', async (req, res) => {
   }
 });
 
-// Health check endpoint
+// Health check endpoint - SECURITY: Don't expose internal URLs
 app.get('/health', (req, res) => {
   res.json({
     status: 'healthy',
-    servicenow_instance: defaultInstance.url,
-    instance_name: defaultInstance.name,
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
+    version: '3.0.1'
+    // Note: Instance details removed for security - use /instances with auth
   });
 });
 
@@ -211,11 +213,19 @@ app.get('/instances', (req, res) => {
 
 // Start the server
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-  console.log(`🚀 Happy MCP Server listening on port ${PORT}`);
-  console.log(`📊 Health check: http://localhost:${PORT}/health`);
-  console.log(`🔌 MCP SSE endpoint: http://localhost:${PORT}/mcp`);
-  console.log(`📋 Available instances: http://localhost:${PORT}/instances`);
+// SECURITY FIX: Default to localhost, not 0.0.0.0
+const HOST = process.env.MCP_BIND_HOST || '127.0.0.1';
+
+if (HOST === '0.0.0.0') {
+  console.warn('⚠️  WARNING: Binding to 0.0.0.0 exposes server to all network interfaces!');
+  console.warn('   Ensure firewall rules are in place or use a reverse proxy.');
+}
+
+app.listen(PORT, HOST, () => {
+  console.log(`🚀 Happy MCP Server listening on ${HOST}:${PORT}`);
+  console.log(`📊 Health check: http://${HOST}:${PORT}/health`);
+  console.log(`🔌 MCP SSE endpoint: http://${HOST}:${PORT}/mcp`);
+  console.log(`📋 Available instances: http://${HOST}:${PORT}/instances`);
   console.log(`💓 SSE keepalive interval: ${SSE_KEEPALIVE_INTERVAL}ms`);
 
   if (process.env.DEBUG === 'true') {

@@ -7,6 +7,52 @@
 
 import axios from 'axios';
 
+// ============================================
+// SECURITY: Table Access Control
+// ============================================
+
+// Sensitive tables that should NEVER be accessible via MCP
+const BLOCKED_TABLES = new Set([
+  'sys_user_token',           // Authentication tokens
+  'oauth_credential',         // OAuth credentials  
+  'oauth_entity',             // OAuth entities
+  'sys_credentials',          // System credentials
+  'sys_certificate',          // Certificates
+  'sys_encryption_context',   // Encryption keys
+  'pwd_reset_request',        // Password reset requests
+  'sys_user_session',         // User sessions
+  'sys_glide_object',         // Internal system objects
+  'v_plugin',                 // Plugin management (write)
+  'sys_cluster_state'         // Cluster state
+]);
+
+// Tables requiring explicit confirmation for write operations
+const SENSITIVE_WRITE_TABLES = new Set([
+  'sys_user',                 // User records
+  'sys_user_role',            // Role assignments
+  'sys_user_group',           // Group management
+  'sys_user_grmember',        // Group membership
+  'sys_script',               // Business rules
+  'sys_script_include',       // Script includes
+  'sys_ui_policy',            // UI policies
+  'sys_security_acl',         // ACLs
+  'sys_properties'            // System properties
+]);
+
+// Dangerous query patterns to block
+const DANGEROUS_QUERY_PATTERNS = [
+  /javascript:/i,
+  /GlideRecord\s*\(/i,
+  /eval\s*\(/i,
+  /\.setValue\s*\(/i,
+  /<script/i,
+  /document\./i,
+  /window\./i
+];
+
+// Max query length to prevent DoS
+const MAX_QUERY_LENGTH = 2000;
+
 export class ServiceNowClient {
   constructor(instanceUrl, username, password) {
     this.currentInstanceName = 'default';
@@ -68,11 +114,66 @@ export class ServiceNowClient {
     };
   }
 
+  // ============================================
+  // SECURITY: Table & Query Validation
+  // ============================================
+
+  /**
+   * Validate table access
+   * @param {string} table - Table name
+   * @param {string} operation - 'read' or 'write'
+   * @throws {Error} If table is blocked
+   */
+  validateTableAccess(table, operation = 'read') {
+    const normalizedTable = table.toLowerCase().trim();
+
+    // Check blocked tables
+    if (BLOCKED_TABLES.has(normalizedTable)) {
+      throw new Error(`SECURITY: Access to table '${table}' is blocked for security reasons.`);
+    }
+
+    // Warn for sensitive write operations
+    if (operation === 'write' && SENSITIVE_WRITE_TABLES.has(normalizedTable)) {
+      console.warn(`⚠️  SECURITY WARNING: Write operation on sensitive table '${table}'`);
+    }
+
+    return true;
+  }
+
+  /**
+   * Sanitize and validate query string
+   * @param {string} query - Query string
+   * @throws {Error} If query contains dangerous patterns
+   */
+  validateQuery(query) {
+    if (!query) return true;
+
+    // Check length
+    if (query.length > MAX_QUERY_LENGTH) {
+      throw new Error(`SECURITY: Query too long (${query.length} chars, max ${MAX_QUERY_LENGTH})`);
+    }
+
+    // Check for dangerous patterns
+    for (const pattern of DANGEROUS_QUERY_PATTERNS) {
+      if (pattern.test(query)) {
+        throw new Error(`SECURITY: Query contains potentially dangerous pattern`);
+      }
+    }
+
+    return true;
+  }
+
   // Generic table operations
   async getRecords(table, query = {}) {
+    // SECURITY: Validate table access
+    this.validateTableAccess(table, 'read');
+    if (query.sysparm_query) {
+      this.validateQuery(query.sysparm_query);
+    }
+
     const params = new URLSearchParams();
     if (query.sysparm_query) params.append('sysparm_query', query.sysparm_query);
-    if (query.sysparm_limit) params.append('sysparm_limit', query.sysparm_limit);
+    if (query.sysparm_limit) params.append('sysparm_limit', Math.min(query.sysparm_limit, 1000)); // Max 1000
     if (query.sysparm_fields) params.append('sysparm_fields', query.sysparm_fields);
 
     const response = await this.client.get(`/api/now/table/${table}?${params}`);
@@ -80,6 +181,9 @@ export class ServiceNowClient {
   }
 
   async getRecord(table, sysId, queryParams = {}) {
+    // SECURITY: Validate table access
+    this.validateTableAccess(table, 'read');
+
     const params = new URLSearchParams();
     if (queryParams.sysparm_fields) params.append('sysparm_fields', queryParams.sysparm_fields);
     if (queryParams.sysparm_display_value) params.append('sysparm_display_value', queryParams.sysparm_display_value);
@@ -93,16 +197,25 @@ export class ServiceNowClient {
   }
 
   async createRecord(table, data) {
+    // SECURITY: Validate table access for write
+    this.validateTableAccess(table, 'write');
+
     const response = await this.client.post(`/api/now/table/${table}`, data);
     return response.data.result;
   }
 
   async updateRecord(table, sysId, data) {
+    // SECURITY: Validate table access for write
+    this.validateTableAccess(table, 'write');
+
     const response = await this.client.put(`/api/now/table/${table}/${sysId}`, data);
     return response.data.result;
   }
 
   async deleteRecord(table, sysId) {
+    // SECURITY: Validate table access for write (delete)
+    this.validateTableAccess(table, 'write');
+
     await this.client.delete(`/api/now/table/${table}/${sysId}`);
     return { success: true };
   }

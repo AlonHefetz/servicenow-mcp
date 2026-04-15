@@ -1917,6 +1917,62 @@ Please verify:
         case 'SN-Execute-Background-Script': {
           const { script, description } = args;
 
+          // ============================================
+          // SECURITY: Script Validation
+          // ============================================
+          
+          // Define dangerous patterns that should be blocked or flagged
+          const DANGEROUS_PATTERNS = [
+            { pattern: /\.deleteMultiple\(\)/i, reason: 'Mass delete operation' },
+            { pattern: /deleteRecord\s*\(\s*\)(?!\s*;?\s*\/\/)/i, reason: 'Bulk delete without filter' },
+            { pattern: /user_password|password_hash|user_password_hash/i, reason: 'Password field access' },
+            { pattern: /GlideSysAttachment.*write|writeFile/i, reason: 'File system write' },
+            { pattern: /Packages\.java\./i, reason: 'Java package access' },
+            { pattern: /eval\s*\(/i, reason: 'Dynamic code evaluation' },
+            { pattern: /gs\.sleep\s*\(\s*\d{5,}\s*\)/i, reason: 'Long sleep (potential DoS)' },
+          ];
+
+          // Require description for audit trail
+          if (!description || description.trim().length < 5) {
+            return {
+              content: [{
+                type: 'text',
+                text: `❌ Script execution blocked: Description is required for audit purposes.
+
+Please provide a 'description' parameter (minimum 5 characters) explaining what this script does.
+
+Example:
+{
+  "script": "gs.info('Hello');",
+  "description": "Test script to verify execution"
+}`
+              }]
+            };
+          }
+
+          // Check for dangerous patterns
+          const warnings = [];
+          for (const { pattern, reason } of DANGEROUS_PATTERNS) {
+            if (pattern.test(script)) {
+              warnings.push(`⚠️ ${reason}`);
+            }
+          }
+
+          // Log execution for audit trail
+          console.error(`📝 AUDIT: Script execution requested`);
+          console.error(`   Description: ${description}`);
+          console.error(`   Script length: ${script.length} chars`);
+          console.error(`   Timestamp: ${new Date().toISOString()}`);
+          console.error(`   Script preview: ${script.substring(0, 100).replace(/\n/g, ' ')}...`);
+          if (warnings.length > 0) {
+            console.error(`   ⚠️ Security warnings: ${warnings.join(', ')}`);
+          }
+
+          // Include warnings in response if found (but still execute)
+          const warningMessage = warnings.length > 0 
+            ? `\n\n⚠️ SECURITY WARNINGS:\n${warnings.join('\n')}\nProceed with caution.\n` 
+            : '';
+
           console.error(`🚀 Executing background script via sys_trigger...`);
 
           try {
@@ -1926,7 +1982,7 @@ Please verify:
             return {
               content: [{
                 type: 'text',
-                text: `✅ Script scheduled for execution via sys_trigger!
+                text: `✅ Script scheduled for execution via sys_trigger!${warningMessage}
 
 ${description ? `Description: ${description}\n` : ''}
 📊 Trigger Details:

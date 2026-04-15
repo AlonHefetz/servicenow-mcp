@@ -29,7 +29,15 @@ export class ConfigManager {
     try {
       const configData = fs.readFileSync(this.configPath, 'utf8');
       const config = JSON.parse(configData);
-      this.instances = config.instances;
+      
+      // Substitute environment variables in instance configs
+      this.instances = config.instances.map(instance => ({
+        ...instance,
+        password: this.resolveEnvVariable(instance.password),
+        username: this.resolveEnvVariable(instance.username),
+        url: this.resolveEnvVariable(instance.url)
+      }));
+      
       return this.instances;
     } catch (error) {
       // Fallback to .env if config file doesn't exist
@@ -39,6 +47,26 @@ export class ConfigManager {
       }
       throw new Error(`Failed to load ServiceNow instances config: ${error.message}`);
     }
+  }
+
+  /**
+   * Resolve environment variable placeholders like ${VAR_NAME}
+   * @param {string} value - Value that may contain ${ENV_VAR} placeholders
+   * @returns {string} Resolved value
+   */
+  resolveEnvVariable(value) {
+    if (!value || typeof value !== 'string') return value;
+    
+    // Match ${VARIABLE_NAME} pattern
+    const envVarPattern = /\$\{([^}]+)\}/g;
+    return value.replace(envVarPattern, (match, varName) => {
+      const envValue = process.env[varName];
+      if (!envValue) {
+        console.warn(`⚠️  Environment variable ${varName} not set`);
+        return match; // Return original placeholder if not found
+      }
+      return envValue;
+    });
   }
 
   /**

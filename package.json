@@ -27,6 +27,8 @@
     "chokidar": "^4.0.3",
     "dotenv": "^16.6.1",
     "express": "^4.22.1",
+    "express-rate-limit": "^8.3.2",
+    "helmet": "^8.1.0",
     "zod": "^3.25.76"
   },
   "devDependencies": {

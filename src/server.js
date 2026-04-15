@@ -7,6 +7,8 @@
 
 import express from 'express';
 import dotenv from 'dotenv';
+import helmet from 'helmet';
+import rateLimit from 'express-rate-limit';
 import { SSEServerTransport } from '@modelcontextprotocol/sdk/server/sse.js';
 import { ServiceNowClient } from './servicenow-client.js';
 import { createMcpServer } from './mcp-server-consolidated.js';
@@ -19,7 +21,64 @@ dotenv.config();
 const SSE_KEEPALIVE_INTERVAL = parseInt(process.env.SSE_KEEPALIVE_INTERVAL || '15000', 10); // Default: 15 seconds
 
 const app = express();
+
+// ============================================
+// SECURITY: HTTP Headers & Rate Limiting
+// ============================================
+app.use(helmet({
+  contentSecurityPolicy: false, // Disabled for SSE compatibility
+}));
+
+// Rate limiting: 100 requests per 15 minutes per IP
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 100,
+  message: { error: 'Too many requests, please try again later.' }
+});
+app.use(limiter);
+
 app.use(express.json());
+
+// ============================================
+// SECURITY: API Key Authentication
+// ============================================
+const API_KEY = process.env.MCP_API_KEY;
+
+if (!API_KEY) {
+  console.warn('⚠️  WARNING: MCP_API_KEY not set. Server is running WITHOUT authentication!');
+  console.warn('   Set MCP_API_KEY in .env file for production use.');
+}
+
+// Authentication middleware
+const authenticateRequest = (req, res, next) => {
+  // Health check returns minimal info without auth
+  if (req.path === '/health') {
+    return next();
+  }
+
+  // If no API key configured, allow (backward compatible but warned)
+  if (!API_KEY) {
+    return next();
+  }
+
+  // Check for API key in header
+  const providedKey = req.headers['x-api-key'] || req.headers['authorization']?.replace('Bearer ', '');
+
+  if (!providedKey) {
+    console.warn(`🚫 Unauthorized request to ${req.path} - missing API key`);
+    return res.status(401).json({ error: 'Missing API key. Provide X-API-Key header.' });
+  }
+
+  if (providedKey !== API_KEY) {
+    console.warn(`🚫 Unauthorized request to ${req.path} - invalid API key`);
+    return res.status(403).json({ error: 'Invalid API key' });
+  }
+
+  next();
+};
+
+// Apply authentication to all routes
+app.use(authenticateRequest);
 
 // In-memory session store (sessionId -> {server, transport})
 const sessions = {};

@@ -41,13 +41,19 @@ app.use(limiter);
 app.use(express.json());
 
 // ============================================
-// SECURITY: API Key Authentication
+// SECURITY: API Key Authentication (required by default)
 // ============================================
 const API_KEY = process.env.MCP_API_KEY;
 
+// Fail-fast: require API key in production unless an explicit dev override is set
+if (!API_KEY && process.env.MCP_ALLOW_NO_API_KEY !== 'true' && process.env.NODE_ENV !== 'development') {
+  console.error('❌ FATAL: MCP_API_KEY is not set. For security the server requires MCP_API_KEY.');
+  console.error('   To run locally for development only, set MCP_ALLOW_NO_API_KEY=true.');
+  process.exit(1);
+}
+
 if (!API_KEY) {
-  console.warn('⚠️  WARNING: MCP_API_KEY not set. Server is running WITHOUT authentication!');
-  console.warn('   Set MCP_API_KEY in .env file for production use.');
+  console.warn('⚠️  NOTICE: MCP running without API key (dev override enabled).');
 }
 
 // Authentication middleware
@@ -57,12 +63,16 @@ const authenticateRequest = (req, res, next) => {
     return next();
   }
 
-  // If no API key configured, allow (backward compatible but warned)
+  // If no API key configured, allow only when explicitly overridden for dev
   if (!API_KEY) {
-    return next();
+    if (process.env.MCP_ALLOW_NO_API_KEY === 'true' || process.env.NODE_ENV === 'development') {
+      console.warn(`⚠️ Allowing unauthenticated request to ${req.path} (dev override).`);
+      return next();
+    }
+    return res.status(401).json({ error: 'Server misconfigured: MCP_API_KEY missing' });
   }
 
-  // Check for API key in header
+  // Check for API key in header or Bearer token
   const providedKey = req.headers['x-api-key'] || req.headers['authorization']?.replace('Bearer ', '');
 
   if (!providedKey) {
@@ -70,10 +80,18 @@ const authenticateRequest = (req, res, next) => {
     return res.status(401).json({ error: 'Missing API key. Provide X-API-Key header.' });
   }
 
-  // SECURITY: Use timing-safe comparison to prevent timing attacks
-  if (!crypto.timingSafeEqual(Buffer.from(providedKey), Buffer.from(API_KEY))) {
-    console.warn(`🚫 Unauthorized request to ${req.path} - invalid API key`);
-    return res.status(403).json({ error: 'Invalid API key' });
+  // SECURITY: Hash both sides to fixed-length digests and use timingSafeEqual
+  try {
+    const providedHash = crypto.createHash('sha256').update(String(providedKey)).digest();
+    const apiHash = crypto.createHash('sha256').update(String(API_KEY)).digest();
+
+    if (!crypto.timingSafeEqual(providedHash, apiHash)) {
+      console.warn(`🚫 Unauthorized request to ${req.path} - invalid API key`);
+      return res.status(403).json({ error: 'Invalid API key' });
+    }
+  } catch (err) {
+    console.error('❌ Error comparing API keys:', err);
+    return res.status(500).json({ error: 'Internal authentication error' });
   }
 
   next();

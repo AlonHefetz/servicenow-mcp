@@ -1916,7 +1916,15 @@ Please verify:
 
         case 'SN-Execute-Background-Script': {
           const { script, description } = args;
-
+          // SECURITY: Disable background script execution by default.
+          // To enable (after review), set environment variable: ENABLE_BACKGROUND_SCRIPTS=true
+          if (process.env.ENABLE_BACKGROUND_SCRIPTS !== 'true') {
+            return {
+              content: [{
+                type: 'text',
+                text: '❌ Background scripts are disabled by server configuration. To enable set ENABLE_BACKGROUND_SCRIPTS=true in the server environment AFTER an administrative security review.'
+              };
+            }
           // ============================================
           // SECURITY: Script Validation
           // ============================================

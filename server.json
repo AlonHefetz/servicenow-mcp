@@ -1,0 +1,57 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-10-17/server.schema.json",
+  "name": "io.github.nickzitzer/happy-platform-mcp",
+  "description": "Happy MCP Server — Model Context Protocol server for the ServiceNow platform with 480+ auto-generated tools, multi-instance support, and natural language search",
+  "repository": {
+    "url": "https://github.com/Happy-Technologies-LLC/happy-platform-mcp",
+    "source": "github"
+  },
+  "version": "3.0.1",
+  "packages": [
+    {
+      "registryType": "npm",
+      "identifier": "happy-platform-mcp",
+      "version": "3.0.1",
+      "transport": {
+        "type": "stdio"
+      },
+      "environmentVariables": [
+        {
+          "description": "ServiceNow instance URL (e.g., https://dev123456.service-now.com)",
+          "isRequired": true,
+          "format": "string",
+          "isSecret": false,
+          "name": "SERVICENOW_INSTANCE_URL"
+        },
+        {
+          "description": "ServiceNow username",
+          "isRequired": true,
+          "format": "string",
+          "isSecret": false,
+          "name": "SERVICENOW_USERNAME"
+        },
+        {
+          "description": "ServiceNow password",
+          "isRequired": true,
+          "format": "string",
+          "isSecret": true,
+          "name": "SERVICENOW_PASSWORD"
+        },
+        {
+          "description": "Authentication type (default: basic)",
+          "isRequired": false,
+          "format": "string",
+          "isSecret": false,
+          "name": "SERVICENOW_AUTH_TYPE"
+        },
+        {
+          "description": "Specific instance name from config file (optional)",
+          "isRequired": false,
+          "format": "string",
+          "isSecret": false,
+          "name": "SERVICENOW_INSTANCE"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,61 @@
+Happy MCP Server
+Copyright 2025 Happy Technologies LLC
+
+This product is licensed under the Apache License, Version 2.0.
+See the LICENSE file for the full license text.
+
+---
+
+TRADEMARK NOTICES
+
+ServiceNow® is a registered trademark of ServiceNow, Inc.
+"Now" is a registered trademark of ServiceNow, Inc.
+This project is not affiliated with, endorsed by, or sponsored by ServiceNow, Inc.
+All ServiceNow® product names, logos, and brands are property of ServiceNow, Inc.
+
+Model Context Protocol (MCP) is an open standard created by Anthropic, PBC.
+"Claude" is a trademark of Anthropic, PBC.
+This project is not affiliated with, endorsed by, or sponsored by Anthropic, PBC.
+
+Node.js is a trademark of the OpenJS Foundation.
+
+All other trademarks mentioned in this project are the property of their
+respective owners. Use of these trademarks does not imply any affiliation
+with or endorsement by their respective owners.
+
+---
+
+THIRD-PARTY SOFTWARE
+
+This project includes or depends on the following third-party software:
+
+- @modelcontextprotocol/sdk - MIT License
+  Copyright (c) Anthropic, PBC
+
+- Express - MIT License
+  Copyright (c) 2009-2014 TJ Holowaychuk
+  Copyright (c) 2013-2014 Roman Shtylman
+  Copyright (c) 2014-2015 Douglas Christopher Wilson
+
+- Axios - MIT License
+  Copyright (c) 2014-present Matt Zabriskie & Collaborators
+
+- Zod - MIT License
+  Copyright (c) 2020 Colin McDonnell
+
+- dotenv - BSD-2-Clause License
+  Copyright (c) 2015, Scott Motte
+
+- Chokidar - MIT License
+  Copyright (c) Paul Miller, Elan Shanker
+
+See the respective package repositories for full license texts.
+
+---
+
+ACKNOWLEDGMENTS
+
+This project was inspired by and built upon ideas from the Echelon AI Labs
+ServiceNow MCP Server (https://github.com/echelon-ai-labs/servicenow-mcp).
+We are grateful for their pioneering work in bringing Model Context Protocol
+capabilities to the ServiceNow platform.

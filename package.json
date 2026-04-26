@@ -1,0 +1,63 @@
+{
+  "name": "happy-platform-mcp",
+  "version": "3.0.1",
+  "description": "Happy MCP Server — Model Context Protocol server for the ServiceNow platform with 480+ auto-generated tools, multi-instance support, and natural language search",
+  "main": "src/server.js",
+  "type": "module",
+  "mcpName": "io.github.nickzitzer/happy-platform-mcp",
+  "bin": {
+    "happy-platform-mcp": "src/stdio-server.js",
+    "servicenow-mcp-server": "src/stdio-server.js"
+  },
+  "scripts": {
+    "dev": "nodemon src/server.js",
+    "start": "node src/server.js",
+    "stdio": "node src/stdio-server.js",
+    "inspector": "npx @modelcontextprotocol/inspector",
+    "extract-metadata": "node scripts/extract-table-metadata.js",
+    "test": "NODE_OPTIONS=--experimental-vm-modules jest",
+    "test:watch": "NODE_OPTIONS=--experimental-vm-modules jest --watch",
+    "test:coverage": "NODE_OPTIONS=--experimental-vm-modules jest --coverage",
+    "test:verbose": "NODE_OPTIONS=--experimental-vm-modules jest --verbose",
+    "release": "./scripts/release.sh"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.27.1",
+    "axios": "^1.13.6",
+    "chokidar": "^4.0.3",
+    "dotenv": "^16.6.1",
+    "express": "^4.22.1",
+    "express-rate-limit": "^8.3.2",
+    "helmet": "^8.1.0",
+    "zod": "^3.25.76"
+  },
+  "devDependencies": {
+    "@types/jest": "^30.0.0",
+    "jest": "^30.2.0",
+    "nodemon": "^3.1.14"
+  },
+  "author": "Happy Technologies LLC",
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Happy-Technologies-LLC/happy-platform-mcp.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Happy-Technologies-LLC/happy-platform-mcp/issues"
+  },
+  "homepage": "https://github.com/Happy-Technologies-LLC/happy-platform-mcp#readme",
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "happy-platform",
+    "itsm",
+    "claude",
+    "ai",
+    "automation",
+    "rest-api",
+    "service-catalog",
+    "cmdb",
+    "workflow",
+    "multi-instance"
+  ]
+}
